@@ -124,6 +124,7 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+**/Properties/launchSettings.json
 
 # StyleCop
 StyleCopReport.xml
@@ -131,7 +132,7 @@ StyleCopReport.xml
 # Files built by Visual Studio
 *_i.c
 *_p.c
-*_h.h
+*_i.h
 *.ilk
 *.meta
 *.obj
@@ -402,4 +403,5 @@ ASALocalRun/
 .mfractor/
 
 # Local History for Visual Studio
+.localhistory/
 .localhistory/
