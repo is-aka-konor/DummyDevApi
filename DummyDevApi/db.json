@@ -1,0 +1,9 @@
+{
+"values":[
+        {"id": 1, "foo":"1","bar":2},
+        {"id": 2, "foo":"2","bar":3}
+    ],
+"endpoints":[
+        {"id": 1, "barFooz":"1","bar":2}
+    ]
+}
