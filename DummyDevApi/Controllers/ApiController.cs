@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using DummyDevApi.Classes;
+﻿using System;
+using System.Collections.Generic;
+using DummyDevApi.DataLayer;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 
 namespace DummyDevApi.Controllers
 {
@@ -10,25 +9,41 @@ namespace DummyDevApi.Controllers
     [ApiController]
     public class ApiController : Controller
     {
-        private Dictionary<string, List<object>> _db;
+        private readonly IUnitOfWork _unitOfWork;
+        private Dictionary<string, IObjectRepository> _repos = new Dictionary<string, IObjectRepository>();
+
+        public ApiController(IUnitOfWork unitOfWork)
+        {
+            this._unitOfWork = unitOfWork;
+        }
+
         public ActionResult Index(string resource, string id)
         {
-            var dbReader = new DbReader();
-            this._db = dbReader.GetDb();
-            if (!this._db.ContainsKey(resource))
+            try
             {
+                if (!this._repos.ContainsKey(resource))
+                {
+                    var repo = this._unitOfWork.GetRepository(resource);
+                    this._repos.Add(resource, repo);
+                }
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
                 return Json(NotFound());
             }
             var methodUsed = HttpContext.Request.Method;
             switch(methodUsed.ToUpper()){
                 case "POST":
-                    return Json("POST METHOD");
+                    return ExecutePostMethod(resource, id);
+
                 case "DELETE":
-                    return Json("DELETE METHOD");
+                    return ExecuteDeleteMethod(resource, id);
+
                 case "PUT":
-                    return Json("PUT METHOD");
+                    return ExecutePutMethod(resource, id);
+
                 case "GET":
-                default: return GetMethod(resource, id);
+                default: return ExecuteGetMethod(resource, id);
             }
 
         }
@@ -39,21 +54,48 @@ namespace DummyDevApi.Controllers
         /// <returns>The while collection or an element by ID if specified</returns>
         /// <param name="resource">Resource.</param>
         /// <param name="id">Identifier of particular element</param>
-        private ActionResult GetMethod(string resource, string id)
+        private ActionResult ExecuteGetMethod(string resource, string id)
         {
+            var repo = this._repos[resource];
             if (string.IsNullOrEmpty(id))
             {
-                return Json(this._db[resource]);
+                return Json(repo.Get());
             }
-            var item = this._db[resource].FirstOrDefault(el => {
-                var tmp = (JObject)el;
-                if (tmp.ContainsKey("id"))
-                {
-                    return tmp.Value<string>("id") == id;
-                }
-                return false;
-            });
+            var item = repo.GetById(id);
             return item != null ? Json(item) : Json(NotFound());
+        }
+
+        /// <summary>
+        /// Executes the post method.
+        /// </summary>
+        /// <returns>The post method result.</returns>
+        /// <param name="resource">Resource.</param>
+        /// <param name="entity">Entity.</param>
+        private ActionResult ExecutePostMethod(string resource, object entity)
+        {
+            return Json("POST METHOD");
+        }
+
+        /// <summary>
+        /// Executes the put method.
+        /// </summary>
+        /// <returns>The put method result.</returns>
+        /// <param name="resource">Resource.</param>
+        /// <param name="entity">Entity.</param>
+        private ActionResult ExecutePutMethod(string resource, object entity)
+        {
+            return Json("PUT METHOD");
+        }
+
+        /// <summary>
+        /// Executes the delete method.
+        /// </summary>
+        /// <returns>The delete method result.</returns>
+        /// <param name="resource">Resource.</param>
+        /// <param name="entity">Entity.</param>
+        private ActionResult ExecuteDeleteMethod(string resource, object entity)
+        {
+            return Json("DELETE METHOD");
         }
     }
 }
