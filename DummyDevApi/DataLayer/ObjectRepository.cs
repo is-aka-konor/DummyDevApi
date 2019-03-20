@@ -41,8 +41,8 @@ namespace DummyDevApi.DataLayer
 
         public virtual void Update(string id, object entity)
         {
-            this._data.Remove(id);
-            this._data.Add(entity);
+            Delete(id);
+            Insert(entity);
         }
 
         public virtual void Delete(string id)

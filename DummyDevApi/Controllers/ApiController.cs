@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using DummyDevApi.DataLayer;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace DummyDevApi.Controllers
 {
@@ -16,7 +17,7 @@ namespace DummyDevApi.Controllers
         {
             this._unitOfWork = unitOfWork;
         }
-
+        
         public ActionResult Index(string resource, string id)
         {
             try
@@ -33,19 +34,15 @@ namespace DummyDevApi.Controllers
             }
             var methodUsed = HttpContext.Request.Method;
             switch(methodUsed.ToUpper()){
-                case "POST":
-                    return ExecutePostMethod(resource, id);
-
                 case "DELETE":
                     return ExecuteDeleteMethod(resource, id);
-
+                case "POST":
+                    return ExecutePostMethod(resource);
                 case "PUT":
                     return ExecutePutMethod(resource, id);
-
                 case "GET": 
                 default: return ExecuteGetMethod(resource, id);
             }
-
         }
 
         /// <summary>
@@ -71,9 +68,24 @@ namespace DummyDevApi.Controllers
         /// <returns>The post method result.</returns>
         /// <param name="resource">Resource.</param>
         /// <param name="entity">Entity.</param>
-        private ActionResult ExecutePostMethod(string resource, object entity)
+        private ActionResult ExecutePostMethod(string resource)
         {
-            return Json("POST METHOD");
+            var entity = GetBody();
+            if (entity == null) return BadRequest();
+            
+            var id = "";
+            if (entity.ContainsKey("id"))
+            {
+                id = entity.Value<string>("id");
+            }
+            
+            var repo = this._repos[resource];
+            if(repo.GetById(id) != null) return Conflict();
+            
+            repo.Insert(entity);
+            this._unitOfWork.Save();
+            
+            return Created($"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.Path}{id}", entity);
         }
 
         /// <summary>
@@ -82,9 +94,19 @@ namespace DummyDevApi.Controllers
         /// <returns>The put method result.</returns>
         /// <param name="resource">Resource.</param>
         /// <param name="entity">Entity.</param>
-        private ActionResult ExecutePutMethod(string resource, object entity)
+        private ActionResult ExecutePutMethod(string resource, string id)
         {
-            return Json("PUT METHOD");
+            var entity = GetBody();
+            if (string.IsNullOrEmpty(id) || entity == null)
+            {
+                return BadRequest();
+            }
+            
+            var repo = this._repos[resource];
+            repo.Update(id, entity);
+            this._unitOfWork.Save();
+            
+            return Ok();
         }
 
         /// <summary>
@@ -93,9 +115,27 @@ namespace DummyDevApi.Controllers
         /// <returns>The delete method result.</returns>
         /// <param name="resource">Resource.</param>
         /// <param name="entity">Entity.</param>
-        private ActionResult ExecuteDeleteMethod(string resource, object entity)
+        private ActionResult ExecuteDeleteMethod(string resource, string id)
         {
-            return Json("DELETE METHOD");
+            var repo = this._repos[resource];
+            repo.Delete(id);
+            this._unitOfWork.Save();
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Extracts body from the request.
+        /// </summary>
+        /// <returns>The request body as JObject</returns>
+        private JObject GetBody()
+        {
+            using (var reader = new System.IO.StreamReader(Request.Body, System.Text.Encoding.UTF8, true, 1024, true))
+            {
+                var body = reader.ReadToEndAsync().Result;
+                var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(body);
+                return obj;
+            }
         }
     }
 }

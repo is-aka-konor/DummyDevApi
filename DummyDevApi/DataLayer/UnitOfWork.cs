@@ -26,7 +26,7 @@ namespace DummyDevApi.DataLayer
 
         public void Save()
         {
-            throw new NotImplementedException();
+            this._engine.SaveDb(this._dataSource);
         }
     }
 }
