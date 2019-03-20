@@ -42,7 +42,7 @@ namespace DummyDevApi.Controllers
                 case "PUT":
                     return ExecutePutMethod(resource, id);
 
-                case "GET":
+                case "GET": 
                 default: return ExecuteGetMethod(resource, id);
             }
 
