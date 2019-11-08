@@ -28,10 +28,7 @@ namespace DummyDevApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().AddNewtonsoftJson(options => 
-                options.SerializerSettings.ContractResolver = 
-                    new CamelCasePropertyNamesContractResolver());
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+            services.AddControllers().AddNewtonsoftJson();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
 
@@ -49,7 +46,10 @@ namespace DummyDevApi
             }
 
             app.UseHttpsRedirection();
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+            });
         }
     }
 }
